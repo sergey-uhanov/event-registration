@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+    networks:
+      - taskbord-network
+
+  
+
+  frontend:
+    build: ./event-bord
+    environment:
+      REACT_APP_API_URL: http://localhost:6060/
+    ports:
+      - '3001:3000'
+    networks:
+      - taskbord-network
+
+  backend:
+    build: ./event-bord-server
+    environment:
+      HOST: postgres
+      DB_PORT: 5432
+      USER: user
+      PASSWORD: password
+      DB: mydatabase
+      PRIVATE_KEY: secret_key_safasf
+      PORT: 6060
+    depends_on:
+      - postgres
+    ports:
+      - '6060:6060'
+    networks:
+      - taskbord-network
+    command: >
+      sh -c "wait-for-it postgres:5432 -- npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all && npm start"
+
+   
+
+volumes:
+  postgres_data:
+
+networks:
+  taskbord-network:
+    driver: bridge
+
